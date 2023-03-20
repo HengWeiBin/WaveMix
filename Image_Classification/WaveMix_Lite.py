@@ -4,15 +4,17 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from torch.autograd import Function
-!pip install pywavelets
+# !pip install pywavelets
 import torch.nn as nn
 import functools
-!pip install einops
+# !pip install einops
 from math import ceil
 import pywt
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
+
+device = 'cuda'
 
 def sfb1d(lo, hi, g0, g1, mode='zero', dim=-1):
     """ 1D synthesis filter bank of an image tensor
@@ -23,10 +25,10 @@ def sfb1d(lo, hi, g0, g1, mode='zero', dim=-1):
     # are in the right order
     if not isinstance(g0, torch.Tensor):
         g0 = torch.tensor(np.copy(np.array(g0).ravel()),
-                          dtype=torch.float, device=lo.device)
+                          dtype=lo.dtype, device=lo.device)
     if not isinstance(g1, torch.Tensor):
         g1 = torch.tensor(np.copy(np.array(g1).ravel()),
-                          dtype=torch.float, device=lo.device)
+                          dtype=lo.dtype, device=lo.device)
     L = g0.numel()
     shape = [1,1,1,1]
     shape[d] = L
@@ -140,10 +142,10 @@ def afb1d(x, h0, h1, mode='zero', dim=-1):
     # are in the right order
     if not isinstance(h0, torch.Tensor):
         h0 = torch.tensor(np.copy(np.array(h0).ravel()[::-1]),
-                          dtype=torch.float, device=x.device)
+                          dtype=x.dtype, device=x.device)
     if not isinstance(h1, torch.Tensor):
         h1 = torch.tensor(np.copy(np.array(h1).ravel()[::-1]),
-                          dtype=torch.float, device=x.device)
+                          dtype=x.dtype, device=x.device)
     L = h0.numel()
     L2 = L // 2
     shape = [1,1,1,1]
@@ -292,7 +294,7 @@ def prep_filt_afb1d(h0, h1, device=device):
     """
     h0 = np.array(h0[::-1]).ravel()
     h1 = np.array(h1[::-1]).ravel()
-    t = torch.get_default_dtype()
+    t = torch.half#torch.get_default_dtype()
     h0 = torch.tensor(h0, device=device, dtype=t).reshape((1, 1, -1))
     h1 = torch.tensor(h1, device=device, dtype=t).reshape((1, 1, -1))
     return h0, h1
